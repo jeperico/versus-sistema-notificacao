@@ -1,0 +1,469 @@
+@model IEnumerable<MinhaNotificacao.Entities.UserEntity>
+@{
+    ViewData["Title"] = "Cutucar Amigos";
+    var currentUserName = ViewBag.CurrentUserName as string;
+    var isAdmin = ViewBag.IsAdmin as bool? ?? false;
+}
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2><i class="bi bi-hand-index-thumb"></i> Cutucar Amigos</h2>
+                <p class="text-muted">Envie uma cutucada para usuários cadastrados no sistema!</p>
+                @if (!isAdmin)
+                {
+                    <div class="alert alert-warning mt-2">
+                        <i class="bi bi-shield-exclamation"></i> <strong>Atenção:</strong> Apenas usuários com role de <strong>Admin</strong> podem cutucar outros usuários.
+                    </div>
+                }
+            </div>
+            <div>
+                @if (isAdmin)
+                {
+                    <button type="button" class="btn btn-warning me-2" id="btnPokeAll">
+                        <i class="bi bi-broadcast"></i> Cutucar Todos
+                    </button>
+                }
+                <button type="button" class="btn btn-outline-info" id="btnStats">
+                    <i class="bi bi-graph-up"></i> Minhas Estatísticas
+                </button>
+            </div>
+        </div>
+
+        <!-- Alert para feedback -->
+        <div id="alertContainer"></div>
+
+        @if (!Model.Any())
+        {
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> Não há outros usuários disponíveis para cutucar no momento.
+            </div>
+        }
+        else
+        {
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th><i class="bi bi-person"></i> Usuário</th>
+                                    <th><i class="bi bi-envelope"></i> Email</th>
+                                    <th><i class="bi bi-person-badge"></i> Nome Completo</th>
+                                    <th><i class="bi bi-shield"></i> Role</th>
+                                    <th class="text-center"><i class="bi bi-gear"></i> Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var user in Model)
+                                {
+                                    <tr id="user-row-@user.Id" class="@(!user.IsActive ? "table-secondary" : "")">
+                                        <td>
+                                            <strong>@user.Username</strong>
+                                            @if (!user.IsActive)
+                                            {
+                                                <span class="badge bg-secondary ms-2">
+                                                    <i class="bi bi-x-circle"></i> Inativo
+                                                </span>
+                                            }
+                                            else if (user.LastLoginAt.HasValue)
+                                            {
+                                                var lastLogin = user.LastLoginAt.Value;
+                                                var isRecent = (DateTime.UtcNow - lastLogin).TotalMinutes < 30;
+                                                if (isRecent)
+                                                {
+                                                    <span class="badge bg-success ms-2">
+                                                        <i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i> Online
+                                                    </span>
+                                                }
+                                            }
+                                        </td>
+                                        <td>@user.Email</td>
+                                        <td>@user.FullName</td>
+                                        <td>
+                                            @if (user.Role == "Admin")
+                                            {
+                                                <span class="badge bg-danger">
+                                                    <i class="bi bi-star-fill"></i> @user.Role
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">@user.Role</span>
+                                            }
+                                        </td>
+                                        <td class="text-center">
+                                            @if (isAdmin)
+                                            {
+                                                @if (user.IsActive)
+                                                {
+                                                    <button type="button" 
+                                                            class="btn btn-primary btn-sm btn-poke" 
+                                                            data-user-id="@user.Id"
+                                                            data-user-name="@user.FullName">
+                                                        <i class="bi bi-hand-index-thumb"></i> Cutucar
+                                                    </button>
+                                                }
+                                                else
+                                                {
+                                                    <button type="button" 
+                                                            class="btn btn-secondary btn-sm" 
+                                                            disabled
+                                                            title="Usuário inativo">
+                                                        <i class="bi bi-x-circle"></i> Inativo
+                                                    </button>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <button type="button" 
+                                                        class="btn btn-secondary btn-sm" 
+                                                        disabled
+                                                        title="Apenas admins podem cutucar">
+                                                    <i class="bi bi-shield-lock"></i> Bloqueado
+                                                </button>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-3">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle"></i> 
+                    Total de usuários disponíveis: <strong>@Model.Count()</strong>
+                </small>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Modal de Estatísticas -->
+<div class="modal fade" id="statsModal" tabindex="-1" aria-labelledby="statsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="statsModalLabel">
+                    <i class="bi bi-graph-up"></i> Minhas Estatísticas de Cutucadas
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary" role="status" id="statsLoading">
+                    <span class="visually-hidden">Carregando...</span>
+                </div>
+                <div id="statsContent" style="display: none;">
+                    <i class="bi bi-hand-index-thumb-fill text-primary" style="font-size: 3rem;"></i>
+                    <h3 class="mt-3">Você foi cutucado</h3>
+                    <h1 class="display-1 text-primary" id="pokeCount">0</h1>
+                    <p class="text-muted">vezes até agora!</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/signalr/dist/browser/signalr.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Configurar conexão SignalR
+            const connection = new signalR.HubConnectionBuilder()
+                .withUrl("/pokeHub")
+                .withAutomaticReconnect()
+                .configureLogging(signalR.LogLevel.Information)
+                .build();
+
+            // Evento quando recebe uma cutucada
+            connection.on("ReceivePoke", function (data) {
+                console.log("Cutucada recebida:", data);
+                
+                // Tocar som (opcional)
+                playPokeSound();
+                
+                // Mostrar notificação animada
+                showPokeNotification(data);
+                
+                // Mostrar alerta na tela
+                showAlert(
+                    `<strong>👋 ${data.fromUserName}</strong> cutucou você! <a href="#" class="alert-link">Ver notificações</a>`,
+                    'warning'
+                );
+                
+                // Atualizar badge de notificações (se existir)
+                updateNotificationBadge();
+            });
+
+            // Conectar ao hub
+            connection.start()
+                .then(function () {
+                    console.log("✅ Conectado ao SignalR - PokeHub");
+                    showConnectionStatus(true);
+                })
+                .catch(function (err) {
+                    console.error("❌ Erro ao conectar ao SignalR:", err);
+                    showConnectionStatus(false);
+                });
+
+            // Evento de reconexão
+            connection.onreconnecting(function (error) {
+                console.warn("⚠️ Reconectando ao SignalR...", error);
+                showConnectionStatus(false);
+            });
+
+            connection.onreconnected(function (connectionId) {
+                console.log("✅ Reconectado ao SignalR. ConnectionId:", connectionId);
+                showConnectionStatus(true);
+            });
+
+            connection.onclose(function (error) {
+                console.error("❌ Conexão fechada:", error);
+                showConnectionStatus(false);
+            });
+
+            // Função para mostrar status de conexão
+            function showConnectionStatus(isConnected) {
+                const statusHtml = isConnected
+                    ? '<small class="text-success"><i class="bi bi-circle-fill"></i> Conectado ao tempo real</small>'
+                    : '<small class="text-danger"><i class="bi bi-circle-fill"></i> Desconectado</small>';
+                
+                if ($('#connectionStatus').length === 0) {
+                    $('h2').after('<div id="connectionStatus" class="mb-2">' + statusHtml + '</div>');
+                } else {
+                    $('#connectionStatus').html(statusHtml);
+                }
+            }
+
+            // Função para mostrar notificação animada
+            function showPokeNotification(data) {
+                // Criar toast de notificação
+                const toastHtml = `
+                    <div class="toast align-items-center text-white bg-primary border-0 poke-toast" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <strong>👋 Você foi cutucado!</strong><br>
+                                <small>${data.fromUserName} cutucou você agora mesmo!</small>
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    </div>
+                `;
+                
+                // Adicionar container de toasts se não existir
+                if ($('#toastContainer').length === 0) {
+                    $('body').append('<div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3"></div>');
+                }
+                
+                const $toast = $(toastHtml);
+                $('#toastContainer').append($toast);
+                
+                const toast = new bootstrap.Toast($toast[0], {
+                    autohide: true,
+                    delay: 5000
+                });
+                toast.show();
+                
+                // Remover toast após esconder
+                $toast.on('hidden.bs.toast', function () {
+                    $(this).remove();
+                });
+                
+                // Animação de shake
+                $toast.addClass('animate__animated animate__shakeX');
+            }
+
+            // Função para tocar som (opcional)
+            function playPokeSound() {
+                // Você pode adicionar um arquivo de áudio aqui
+                // const audio = new Audio('/sounds/poke.mp3');
+                // audio.play().catch(err => console.log('Erro ao tocar som:', err));
+            }
+
+            // Função para atualizar badge de notificações
+            function updateNotificationBadge() {
+                // Implementar se houver um badge de notificações no menu
+            }
+
+            // Função para mostrar alertas
+            function showAlert(message, type = 'success') {
+                const alertHtml = `
+                    <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                        <i class="bi bi-${type === 'success' ? 'check-circle-fill' : type === 'warning' ? 'exclamation-triangle-fill' : 'exclamation-triangle-fill'}"></i>
+                        ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `;
+                $('#alertContainer').html(alertHtml);
+                
+                // Auto-remover após 8 segundos
+                setTimeout(function() {
+                    $('.alert').fadeOut('slow', function() {
+                        $(this).remove();
+                    });
+                }, 8000);
+            }
+
+            // Evento de click nos botões de cutucar
+            $('.btn-poke').on('click', function () {
+                const button = $(this);
+                const userId = button.data('user-id');
+                const userName = button.data('user-name');
+                
+                // Desabilitar botão durante a requisição
+                button.prop('disabled', true);
+                const originalHtml = button.html();
+                button.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Cutucando...');
+
+                // Fazer requisição AJAX
+                $.ajax({
+                    url: `/api/poke/${userId}`,
+                    type: 'POST',
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            const onlineStatus = response.isOnline ? ' 🟢 (Online)' : ' ⚫ (Offline)';
+                            showAlert(`<strong>Sucesso!</strong> ${response.message}${onlineStatus}`, 'success');
+                            
+                            // Animação de sucesso no botão
+                            button.html('<i class="bi bi-check-circle-fill"></i> Cutucado!');
+                            button.removeClass('btn-primary').addClass('btn-success');
+                            
+                            // Resetar botão após 2 segundos
+                            setTimeout(function() {
+                                button.html(originalHtml);
+                                button.removeClass('btn-success').addClass('btn-primary');
+                                button.prop('disabled', false);
+                            }, 2000);
+                        } else {
+                            showAlert(response.message, 'danger');
+                            button.html(originalHtml);
+                            button.prop('disabled', false);
+                        }
+                    },
+                    error: function (xhr) {
+                        let errorMessage = 'Erro ao cutucar usuário. Tente novamente.';
+                        
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        }
+                        
+                        showAlert(errorMessage, 'danger');
+                        button.html(originalHtml);
+                        button.prop('disabled', false);
+                    }
+                });
+            });
+
+            // Botão de cutucar todos
+            $('#btnPokeAll').on('click', function () {
+                const button = $(this);
+                
+                // Confirmar ação
+                if (!confirm('Tem certeza que deseja cutucar TODOS os usuários?')) {
+                    return;
+                }
+                
+                // Desabilitar botão durante a requisição
+                button.prop('disabled', true);
+                const originalHtml = button.html();
+                button.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Cutucando todos...');
+
+                // Fazer requisição AJAX
+                $.ajax({
+                    url: '/api/poke/all',
+                    type: 'POST',
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            const message = `<strong>Sucesso!</strong> ${response.message}`;
+                            if (response.failureCount > 0) {
+                                showAlert(message + ` <small>(${response.failureCount} falha(s))</small>`, 'warning');
+                            } else {
+                                showAlert(message, 'success');
+                            }
+                            
+                            // Animação de sucesso no botão
+                            button.html('<i class="bi bi-check-circle-fill"></i> Todos cutucados!');
+                            
+                            // Resetar botão após 3 segundos
+                            setTimeout(function() {
+                                button.html(originalHtml);
+                                button.prop('disabled', false);
+                            }, 3000);
+                        } else {
+                            showAlert(response.message, 'danger');
+                            button.html(originalHtml);
+                            button.prop('disabled', false);
+                        }
+                    },
+                    error: function (xhr) {
+                        let errorMessage = 'Erro ao cutucar todos os usuários. Tente novamente.';
+                        
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        }
+                        
+                        showAlert(errorMessage, 'danger');
+                        button.html(originalHtml);
+                        button.prop('disabled', false);
+                    }
+                });
+            });
+
+            // Botão de estatísticas
+            $('#btnStats').on('click', function () {
+                const modal = new bootstrap.Modal(document.getElementById('statsModal'));
+                modal.show();
+                
+                // Carregar estatísticas
+                $('#statsLoading').show();
+                $('#statsContent').hide();
+                
+                $.ajax({
+                    url: '/api/poke/stats',
+                    type: 'GET',
+                    success: function (response) {
+                        if (response.success) {
+                            $('#pokeCount').text(response.pokeCount);
+                            $('#statsLoading').hide();
+                            $('#statsContent').show();
+                        }
+                    },
+                    error: function () {
+                        $('#statsLoading').hide();
+                        $('#statsContent').html('<p class="text-danger">Erro ao carregar estatísticas.</p>').show();
+                    }
+                });
+            });
+        });
+    </script>
+
+    <style>
+        .poke-toast {
+            min-width: 300px;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+        
+        @@keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+            20%, 40%, 60%, 80% { transform: translateX(10px); }
+        }
+        
+        .animate__shakeX {
+            animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
+        }
+    </style>
+}

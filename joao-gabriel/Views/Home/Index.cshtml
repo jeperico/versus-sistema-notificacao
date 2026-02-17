@@ -1,0 +1,79 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Bem-vindo ao Sistema de Notificações</h1>
+    <p class="lead">Gerencie suas notificações e interaja com outros usuários</p>
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-8 mx-auto">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-hand-index-thumb"></i> Sistema de Cutucadas</h4>
+            </div>
+            <div class="card-body">
+                <h5>O que é?</h5>
+                <p>
+                    O sistema de cutucadas permite que administradores enviem notificações amigáveis para outros usuários,
+                    criando uma forma divertida e interativa de comunicação dentro da plataforma.
+                </p>
+
+                <h5 class="mt-4">Como funciona?</h5>
+                <ul class="list-group list-group-flush mb-3">
+                    <li class="list-group-item">
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                        <strong>Permissões:</strong> Apenas usuários com role de <span class="badge bg-danger">Admin</span> podem cutucar outros usuários
+                    </li>
+                    <li class="list-group-item">
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                        <strong>Tempo Real:</strong> As cutucadas são enviadas instantaneamente usando SignalR para notificações em tempo real
+                    </li>
+                    <li class="list-group-item">
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                        <strong>Notificação:</strong> Quando cutucado, você recebe uma notificação com a mensagem "👋 Você foi cutucado!"
+                    </li>
+                    <li class="list-group-item">
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                        <strong>Estatísticas:</strong> Acompanhe quantas vezes você foi cutucado através do painel de estatísticas
+                    </li>
+                    <li class="list-group-item">
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                        <strong>Histórico:</strong> Todas as cutucadas ficam registradas no seu histórico de notificações
+                    </li>
+                </ul>
+
+                <h5 class="mt-4">Recursos Técnicos</h5>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6><i class="bi bi-broadcast"></i> SignalR Hub</h6>
+                                <p class="small mb-0">
+                                    Comunicação bidirecional em tempo real para entrega instantânea de notificações
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6><i class="bi bi-database"></i> Persistência</h6>
+                                <p class="small mb-0">
+                                    Todas as cutucadas são salvas no banco de dados para histórico completo
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 text-center">
+                    <a href="/Poke" class="btn btn-primary btn-lg">
+                        <i class="bi bi-hand-index-thumb"></i> Ir para Cutucadas
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,28 @@
+@{
+    ViewData["Title"] = "Acesso Negado";
+}
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6">
+        <div class="card border-danger shadow">
+            <div class="card-body text-center p-5">
+                <i class="bi bi-shield-exclamation text-danger" style="font-size: 4rem;"></i>
+                <h2 class="card-title mt-3 mb-3 text-danger">Acesso Negado</h2>
+                <p class="card-text text-muted mb-4">
+                    Você não tem permissão para acessar esta página.
+                </p>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <a asp-action="Index" asp-controller="Home" class="btn btn-primary">
+                        <i class="bi bi-house"></i> Voltar para Home
+                    </a>
+                    @if (!User.Identity?.IsAuthenticated == true)
+                    {
+                        <a asp-action="Login" asp-controller="Account" class="btn btn-outline-secondary">
+                            <i class="bi bi-box-arrow-in-right"></i> Fazer Login
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

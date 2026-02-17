@@ -1,0 +1,486 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - MinhaNotificacao</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/MinhaNotificacao.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container-fluid">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
+                    <i class="bi bi-bell-fill"></i> MinhaNotificacao
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">
+                                <i class="bi bi-house"></i> Home
+                            </a>
+                        </li>
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Poke" asp-action="Index">
+                                    <i class="bi bi-hand-index-thumb"></i> Cutucar
+                                </a>
+                            </li>
+                        }
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">
+                                <i class="bi bi-shield-lock"></i> Privacy
+                            </a>
+                        </li>
+                    </ul>
+                    <ul class="navbar-nav">
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <!-- Notificações -->
+                            <li class="nav-item dropdown" id="notificationDropdown">
+                                <a class="nav-link position-relative text-dark" href="#" id="notificationBell" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-bell" id="bellIcon"></i>
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notificationBadge" style="display: none; font-size: 0.7rem;">
+                                        0
+                                    </span>
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-end p-0" aria-labelledby="notificationBell" style="width: 350px; max-height: 500px; overflow-y: auto;">
+                                    <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom bg-light">
+                                        <h6 class="mb-0">Notificações</h6>
+                                        <button class="btn btn-sm btn-link text-decoration-none" id="markAllReadBtn">Marcar todas como lidas</button>
+                                    </div>
+                                    <div id="notificationList" class="list-unstyled mb-0">
+                                        <div class="text-center py-4 text-muted">
+                                            <i class="bi bi-bell-slash fs-3"></i>
+                                            <p class="mb-0 mt-2">Carregando notificações...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                            
+                            <!-- Menu do usuário -->
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-dark" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-person-circle"></i> @User.Identity.Name
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                                    <li>
+                                        <a class="dropdown-item" href="#">
+                                            <i class="bi bi-person"></i> Perfil
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form asp-action="Logout" asp-controller="Account" method="post" class="d-inline">
+                                            <button type="submit" class="dropdown-item">
+                                                <i class="bi bi-box-arrow-right"></i> Sair
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Login">
+                                    <i class="bi bi-box-arrow-in-right"></i> Login
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Register">
+                                    <i class="bi bi-person-plus"></i> Registrar
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+                <i class="bi bi-check-circle-fill"></i> @TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+                <i class="bi bi-exclamation-triangle-fill"></i> @TempData["ErrorMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (TempData["InfoMessage"] != null)
+        {
+            <div class="alert alert-info alert-dismissible fade show mt-3" role="alert">
+                <i class="bi bi-info-circle-fill"></i> @TempData["InfoMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2026 - MinhaNotificacao - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        </div>
+    </footer>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <script src="~/lib/signalr/dist/browser/signalr.min.js"></script>
+        <script>
+            // Sistema de Notificações em Tempo Real
+            let notificationConnection;
+            let selectedNotifications = [];
+
+            // CSS para animações
+            const style = document.createElement('style');
+            style.textContent = `
+                @@keyframes bellShake {
+                    0%, 100% { transform: rotate(0deg); }
+                    10%, 30%, 50%, 70%, 90% { transform: rotate(-15deg); }
+                    20%, 40%, 60%, 80% { transform: rotate(15deg); }
+                }
+                
+                .bell-shake {
+                    animation: bellShake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+                }
+                
+                .notification-item {
+                    transition: background-color 0.2s;
+                    cursor: pointer;
+                    border-left: 3px solid transparent;
+                }
+                
+                .notification-item:hover {
+                    background-color: #f8f9fa !important;
+                }
+                
+                .notification-item.unread {
+                    background-color: #e7f3ff;
+                    border-left-color: #0d6efd;
+                }
+                
+                .notification-item.selected {
+                    background-color: #d1ecf1;
+                    border-left-color: #0dcaf0;
+                }
+                
+                @@keyframes badgePulse {
+                    0% { transform: scale(1); }
+                    50% { transform: scale(1.2); }
+                    100% { transform: scale(1); }
+                }
+                
+                .badge-pulse {
+                    animation: badgePulse 0.5s ease-in-out;
+                }
+            `;
+            document.head.appendChild(style);
+
+            // Conectar ao SignalR
+            async function initializeNotifications() {
+                try {
+                    notificationConnection = new signalR.HubConnectionBuilder()
+                        .withUrl("/pokeHub")
+                        .withAutomaticReconnect()
+                        .build();
+
+                    // Evento quando recebe um poke (que cria uma notificação)
+                    notificationConnection.on("ReceivePoke", function (data) {
+                        console.log("Recebeu poke:", data);
+                        loadNotificationCount();
+                        shakeBell();
+                    });
+
+                    await notificationConnection.start();
+                    console.log("SignalR conectado para notificações");
+                    
+                    // Carregar apenas a contagem inicial
+                    await loadNotificationCount();
+                    
+                } catch (err) {
+                    console.error("Erro ao conectar SignalR:", err);
+                    setTimeout(initializeNotifications, 5000);
+                }
+            }
+
+            // Carregar apenas a contagem de notificações
+            async function loadNotificationCount() {
+                try {
+                    console.log('Carregando contagem de notificações...');
+                    const response = await fetch('/api/notifications/my/unread-count');
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error('Erro HTTP:', response.status, errorText);
+                        throw new Error(`Erro ${response.status}: ${errorText}`);
+                    }
+                    
+                    const count = await response.json();
+                    console.log('Contagem de notificações:', count);
+                    const badge = document.getElementById('notificationBadge');
+                    
+                    if (count > 0) {
+                        badge.textContent = count > 99 ? '99+' : count;
+                        badge.style.display = 'inline-block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                } catch (error) {
+                    console.error('Erro ao carregar contagem:', error);
+                }
+            }
+
+            // Carregar notificações completas
+            async function loadNotifications() {
+                try {
+                    console.log('Carregando lista de notificações...');
+                    const response = await fetch('/api/notifications/my/recent?limit=20');
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error('Erro HTTP:', response.status, errorText);
+                        throw new Error(`Erro ${response.status}: ${errorText}`);
+                    }
+                    
+                    const notifications = await response.json();
+                    console.log('Notificações carregadas:', notifications.length);
+                    updateNotificationCount(notifications);
+                    renderNotifications(notifications);
+                } catch (error) {
+                    console.error('Erro ao carregar notificações:', error);
+                    renderErrorMessage(error.message);
+                }
+            }
+
+            // Atualizar contador
+            function updateNotificationCount(notifications) {
+                const unreadCount = notifications.filter(n => !n.isRead).length;
+                const badge = document.getElementById('notificationBadge');
+                
+                if (unreadCount > 0) {
+                    badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                    badge.style.display = 'inline-block';
+                    badge.classList.add('badge-pulse');
+                    setTimeout(() => badge.classList.remove('badge-pulse'), 500);
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+
+            // Renderizar lista de notificações
+            function renderNotifications(notifications) {
+                const container = document.getElementById('notificationList');
+                
+                if (notifications.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-bell-slash fs-3"></i>
+                            <p class="mb-0 mt-2">Nenhuma notificação</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = notifications.map(n => `
+                    <div class="notification-item px-3 py-2 border-bottom ${n.isRead ? '' : 'unread'}" 
+                         data-id="${n.id}"
+                         onclick="toggleNotificationSelection(${n.id})">
+                        <div class="d-flex align-items-start">
+                            <div class="form-check me-2">
+                                <input class="form-check-input notification-checkbox" 
+                                       type="checkbox" 
+                                       data-id="${n.id}"
+                                       onclick="event.stopPropagation();"
+                                       onchange="updateSelectionFromCheckbox(${n.id}, this.checked)">
+                            </div>
+                            <div class="flex-grow-1" style="min-width: 0;">
+                                <div class="d-flex justify-content-between align-items-start mb-1">
+                                    <h6 class="mb-0 text-truncate" style="font-size: 0.9rem;">
+                                        ${n.title}
+                                        ${!n.isRead ? '<span class="badge bg-primary ms-1" style="font-size: 0.6rem;">NOVA</span>' : ''}
+                                    </h6>
+                                </div>
+                                <p class="mb-1 text-muted" style="font-size: 0.85rem;">${n.message}</p>
+                                <small class="text-muted">${formatDate(n.createdAt)}</small>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Renderizar mensagem de erro
+            function renderErrorMessage(errorMsg = 'Erro ao carregar notificações') {
+                const container = document.getElementById('notificationList');
+                container.innerHTML = `
+                    <div class="text-center py-4 text-danger">
+                        <i class="bi bi-exclamation-triangle fs-3"></i>
+                        <p class="mb-0 mt-2">${errorMsg}</p>
+                        <button class="btn btn-sm btn-link" onclick="loadNotifications()">Tentar novamente</button>
+                    </div>
+                `;
+            }
+
+            // Alternar seleção de notificação
+            function toggleNotificationSelection(id) {
+                const index = selectedNotifications.indexOf(id);
+                const checkbox = document.querySelector(`.notification-checkbox[data-id="${id}"]`);
+                
+                if (index > -1) {
+                    selectedNotifications.splice(index, 1);
+                    checkbox.checked = false;
+                } else {
+                    selectedNotifications.push(id);
+                    checkbox.checked = true;
+                }
+                
+                updateNotificationItemStyle(id);
+            }
+
+            // Atualizar seleção via checkbox
+            function updateSelectionFromCheckbox(id, checked) {
+                const index = selectedNotifications.indexOf(id);
+                
+                if (checked && index === -1) {
+                    selectedNotifications.push(id);
+                } else if (!checked && index > -1) {
+                    selectedNotifications.splice(index, 1);
+                }
+                
+                updateNotificationItemStyle(id);
+            }
+
+            // Atualizar estilo do item
+            function updateNotificationItemStyle(id) {
+                const item = document.querySelector(`.notification-item[data-id="${id}"]`);
+                if (selectedNotifications.includes(id)) {
+                    item.classList.add('selected');
+                } else {
+                    item.classList.remove('selected');
+                }
+            }
+
+            // Marcar selecionadas como lidas
+            async function markSelectedAsRead() {
+                if (selectedNotifications.length === 0) {
+                    alert('Selecione pelo menos uma notificação');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/notifications/mark-read', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(selectedNotifications)
+                    });
+
+                    if (response.ok) {
+                        selectedNotifications = [];
+                        await loadNotifications();
+                        await loadNotificationCount();
+                    }
+                } catch (error) {
+                    console.error('Erro ao marcar notificações:', error);
+                    alert('Erro ao marcar notificações como lidas');
+                }
+            }
+
+            // Marcar todas como lidas
+            async function markAllAsRead() {
+                try {
+                    const response = await fetch('/api/notifications/my/mark-all-read', {
+                        method: 'POST'
+                    });
+
+                    if (response.ok) {
+                        selectedNotifications = [];
+                        await loadNotifications();
+                        await loadNotificationCount();
+                    }
+                } catch (error) {
+                    console.error('Erro ao marcar todas:', error);
+                }
+            }
+
+            // Animação do sino
+            function shakeBell() {
+                const bell = document.getElementById('bellIcon');
+                bell.classList.add('bell-shake');
+                setTimeout(() => bell.classList.remove('bell-shake'), 500);
+            }
+
+            // Formatar data
+            function formatDate(dateString) {
+                const date = new Date(dateString);
+                const now = new Date();
+                const diff = now - date;
+                const minutes = Math.floor(diff / 60000);
+                
+                if (minutes < 1) return 'Agora mesmo';
+                if (minutes < 60) return `${minutes} min atrás`;
+                
+                const hours = Math.floor(minutes / 60);
+                if (hours < 24) return `${hours}h atrás`;
+                
+                const days = Math.floor(hours / 24);
+                if (days < 7) return `${days}d atrás`;
+                
+                return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            }
+
+            // Event Listeners
+            document.getElementById('markAllReadBtn').addEventListener('click', markAllAsRead);
+            
+            // Evento quando o dropdown de notificações é aberto
+            const notificationDropdown = document.getElementById('notificationDropdown');
+            notificationDropdown.addEventListener('shown.bs.dropdown', function () {
+                console.log('Dropdown de notificações aberto - carregando notificações...');
+                loadNotifications();
+            });
+            
+            // Adicionar botão para marcar selecionadas
+            document.querySelector('#notificationDropdown .dropdown-menu').insertAdjacentHTML('afterbegin', `
+                <div class="px-3 py-2 border-bottom bg-light" style="display: none;" id="selectedActionsBar">
+                    <button class="btn btn-sm btn-primary w-100" onclick="markSelectedAsRead()">
+                        Marcar selecionadas como lidas
+                    </button>
+                </div>
+            `);
+
+            // Mostrar/ocultar barra de ações
+            setInterval(() => {
+                const actionsBar = document.getElementById('selectedActionsBar');
+                if (selectedNotifications.length > 0) {
+                    actionsBar.style.display = 'block';
+                } else {
+                    actionsBar.style.display = 'none';
+                }
+            }, 100);
+
+            // Inicializar
+            initializeNotifications();
+        </script>
+    }
+    
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
